@@ -1,5 +1,5 @@
 const request = require('request');
-const redis = require('redis');
+const redis = require('async-redis');
 const Ciudad = require('../model/ciudad')
 const axios = require('axios');
 const API_KEY = '39860039f1eeda6dd272f43d61ae467d';// 'a5e036bc49458c5f7bb593e87668f9a8';
@@ -24,12 +24,10 @@ let pushCiudades = async () => {
     return ciudadesJSON;
 }
 
-let Ciudades = async () => {
-    return new Promise((resolve, reject) => {
-        redisCiudades.get('keyCiudades', function (err, reply) {
-            resolve(reply);
-        });
-    })
+
+let Ciudades = async (req, res) => {
+    let ciudadesRedis = await redisCiudades.get("keyCiudades");
+    return ciudadesRedis;
 }
 
 let seachTemperatura = async (elementCiudad) => {
@@ -50,44 +48,28 @@ let converTime = (hora) => {
 let concatCiudadClima = async (ciudades) => {
     let dataClima = [];
     await ciudades.forEach(async elementCiudad => {
-        let dataTemp = await seachTemperatura(elementCiudad);
-        await dataClima.push({
+        dataTemp = await seachTemperatura(elementCiudad);
+        dataClima.push({
             ciudad: `(${elementCiudad.codigoCiudad}) - ${elementCiudad.nombreCiudad} `,
             latitud: elementCiudad.latitud,
             longitud: elementCiudad.longitud,
             hora: converTime(dataTemp.data.currently.time),
             temperatura: dataTemp.data.currently.temperature
         });
-    });
 
-    console.log("qqq", dataClima);
+    });
+    console.log("wwwwww", dataClima);
+
     return dataClima
 }
 
-let dataCiudad = async () => {
+dataCiudad = async (req, res, next) => {
+    console.log("eeeeeeeeeeeeeeeeeeeee");
     pushCiudades();
-    let ciudades = JSON.parse(await Ciudades());
-    let ciudadClima = await concatCiudadClima(ciudades)
-    return { a: 200, data: ciudadClima }
+    let ciudadesRes = await Ciudades();
+    return res.json(JSON.parse(ciudadesRes));
 }
 
-/* getCitiesForecast = async () => {
-    let data = [];
-    for (let i = 0; i < cities.length; i++) {
-        let city = cities[i];
-        let geospace = await this.redisRepository.hashGetAsync('cities', city.key);
-        let forecastApiData = await this.forecastApi.getCityForecast(geospace);
-        data.push({ name: city.key, country: city.country, ...forecastApiData });
-    };
-    return data;
-} */
-
-dataCiudad()
-    .then(result => {
-        console.log("*******************", result)
-    }).catch((err) => {
-        console.log(err);
-    });
 
 module.exports = {
     dataCiudad
