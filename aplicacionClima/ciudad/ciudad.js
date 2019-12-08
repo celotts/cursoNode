@@ -64,7 +64,6 @@ let concatCiudadClima = async (ciudades) => {
 }
 
 dataCiudad = async (req, res, next) => {
-    console.log("eeeeeeeeeeeeeeeeeeeee");
     pushCiudades();
     let ciudadesRes = await Ciudades();
     return res.json(JSON.parse(ciudadesRes));
